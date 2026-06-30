@@ -99,11 +99,7 @@ def fit_popularity(train: pd.DataFrame, movies: pd.DataFrame, q: float):
 # ---------------------------------------------------------------------------
 def sidebar_config() -> dict:
     st.sidebar.header("⚙️ Configuration")
-    use_syn = st.sidebar.toggle(
-        "Use synthetic data", value=False,
-        help="Skip the MovieLens download and use a small generated dataset.",
-    )
     min_u = st.sidebar.slider("Min ratings / user", 1, 50, 5)
     min_m = st.sidebar.slider("Min ratings / movie", 1, 50, 5)
     test_frac = st.sidebar.slider("Test fraction", 0.1, 0.4, 0.2, 0.05)
-    return {"use_synthetic": use_syn, "min_u": min_u, "min_m": min_m, "test_frac": test_frac}
+    return {"min_u": min_u, "min_m": min_m, "test_frac": test_frac}
