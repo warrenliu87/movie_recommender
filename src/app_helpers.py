@@ -15,7 +15,9 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-
+from src.data import (  # noqa: E402
+    load_movielens, make_synthetic, filter_sparse, train_test_split_ratings,
+)
 from src.recommenders import (  # noqa: E402
     PopularityRecommender, ItemBasedCF, UserBasedCF,
     ContentBasedRecommender, MatrixFactorization,
@@ -26,9 +28,16 @@ from src.recommenders import (  # noqa: E402
 # Data
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner="Loading MovieLens data…")
-def get_data():
-    """Load and cache the MovieLens dataset."""
-    return _bundle(load_movielens(), source="ml-latest-small")
+def get_data(use_synthetic: bool = False):
+    """Load real MovieLens; fall back to synthetic if the download fails."""
+    if use_synthetic:
+        return _bundle(make_synthetic(), source="synthetic")
+    try:
+        return _bundle(load_movielens(), source="ml-latest-small")
+    except Exception as exc:  # network blocked, etc.
+        st.warning(f"Could not load MovieLens ({exc}); using synthetic data.")
+        return _bundle(make_synthetic(), source="synthetic")
+
 
 def _bundle(ml, source: str) -> dict:
     return {
@@ -99,7 +108,11 @@ def fit_popularity(train: pd.DataFrame, movies: pd.DataFrame, q: float):
 # ---------------------------------------------------------------------------
 def sidebar_config() -> dict:
     st.sidebar.header("⚙️ Configuration")
+    use_syn = st.sidebar.toggle(
+        "Use synthetic data", value=False,
+        help="Skip the MovieLens download and use a small generated dataset.",
+    )
     min_u = st.sidebar.slider("Min ratings / user", 1, 50, 5)
     min_m = st.sidebar.slider("Min ratings / movie", 1, 50, 5)
     test_frac = st.sidebar.slider("Test fraction", 0.1, 0.4, 0.2, 0.05)
-    return {"min_u": min_u, "min_m": min_m, "test_frac": test_frac}
+    return {"use_synthetic": use_syn, "min_u": min_u, "min_m": min_m, "test_frac": test_frac}
